@@ -1,0 +1,145 @@
+// GNX Tool - (Author: Genex)
+
+// Global Variables
+hostComputer = get_shell.host_computer
+scriptName = program_path.split("/")[-1]
+scriptVersion = "v1.0"
+isScriptRunning = true
+isFirstRun = true
+parentFolder = false
+lastFolder = null
+lastSeperator = null
+fetchUserInput = null
+
+// Command Initialization
+mainCommands = ["help", "exit", "clear", "flist"]
+
+// Colour Initialization - Hex Codes
+color = {}
+color.white = "<color=#FFFFFF>"
+color.red = "<color=#FF0000>"
+color.blue = "<color=#2F9E90>"
+color.orange = "<color=#F3441E>"
+color.yellow = "<color=#C5C816>"
+color.purple = "<color=#9B2AE9>"
+
+PrintText = function(tcolor, text) // tcolor = Colour String. Use color.white (Without Quotations) In Function Callback Arguments. text = Message String
+	print(tcolor + text + "</color>")
+end function
+
+ErrorText = function(text, ex) // text = Message String. ex = Boolean. True: Exit Program
+	print(color.red + "<b>Error</b>" + color.white + ": " + text + "</color>")
+	if ex == true then
+		ExitProgram()
+	end if
+end function
+
+SyntaxText = function(text, ex) // text = Message String. ex = Boolean. True: Exit Program
+	print(color.blue + "<b>Syntax</b>" + color.white + ": " + text + "</color>")
+	if ex == true then
+		ExitProgram()
+	end if
+end function
+
+ScriptDetails = function() // Script Name, Version, & Author Name
+	PrintText(color.orange, "<b>" + scriptName.upper + " Tool " + scriptVersion + " (" + color.white + "Author: Genex" + color.orange + ")</b>")
+end function
+
+ExitProgram = function() // Self-Explanatory
+	isScriptRunning = false
+	exit(color.red + "Exiting program...</color>")
+end function
+
+if params.len > 0 then // Script Starts With Only The Name Of The Script. Example: 'genx' (No Further Parameters)
+	SyntaxText(scriptName, true)
+end if
+
+CommandInput = function() // Check Commands. If First Run Then Display Script Details And A Help Message
+	globals.fetchUserInput = user_input(color.white + "[$" + current_path + "] (User: " + active_user + ") > ").split(" ")
+end function
+
+CommandUnknown = function() // Check Commands. If Non-Existent, Print Message
+	ErrorText("You have entered an unknown command.", false)
+end function
+
+GetFiles = function(fpath, parentPath) // Call And Print Out File/Folder Structures
+	listFolders = fpath.get_folders
+    fileSeperator = " "
+    seperatorCount = null
+	for folder in listFolders
+        isParentFolder = parent_path(folder.path)
+		listFiles = folder.get_files
+		if parentPath == isParentFolder then
+			parentIterate = folder.path.replace("/", " ").split(" ")
+			folderNames = PrintText(color.yellow, "|[" + folder.name + "] (" + folder.permissions + ")")
+		else
+            if folder.parent.path == lastFolder.parent.path then
+                folderNames = PrintText(color.yellow, lastSeperator + "|[" + folder.name + "] (" + folder.permissions + ")")
+            else
+                childIterate = folder.path.replace("/", " ").split(" ")
+                seperatorCount = childIterate.len - parentIterate.len
+                fileSeperator = (fileSeperator * seperatorCount) * 2
+                globals.lastSeperator = fileSeperator
+                folderNames = PrintText(color.yellow, fileSeperator + "|[" + folder.name + "] (" + folder.permissions + ")")
+            end if
+		end if
+        for file in listFiles
+            if folder.parent.path == parentPath then
+                PrintText(color.white, file.name + " (" + file.permissions + ")")
+            else
+                PrintText(color.white, lastSeperator + file.name + " (" + file.permissions + ")")
+            end if
+        end for
+        fileSeperator = " "
+        globals.lastFolder = folder
+        GetFiles(hostComputer.File(folder.path))
+	end for
+end function
+
+while isScriptRunning // Infinite Loop To Listen For User Input (Unless Loop Is Broken Through Setting 'isScriptRunning' To False)
+	if isFirstRun == true then
+		ScriptDetails()
+		PrintText(color.white, "Enter 'help' for a list of commands.")
+		isFirstRun = false
+	end if
+	CommandInput()
+	if fetchUserInput[0] == "help" then // Help Command
+		if fetchUserInput.len > 1 then
+			SyntaxText(fetchUserInput[0], false)
+		else
+			listCommands = mainCommands.join(", ")
+			PrintText(color.purple, "Commands List" + color.white + " - " + listCommands)
+		end if
+	else if fetchUserInput[0] == "exit" then // Exit Command
+		if fetchUserInput.len > 1 then
+			SyntaxText(fetchUserInput[0], false)
+		else
+			ExitProgram()
+		end if
+	else if fetchUserInput[0] == "flist" or fetchUserInput[0] == "fl" then // Folder & File Listing Command
+		if fetchUserInput.len == 1 then
+			SyntaxText("flist/fl <opt: directory path>", false)
+			currentPath = hostComputer.File(current_path)
+			GetFiles(currentPath, currentPath.path)
+		else if fetchUserInput.len == 2 then
+			currentPath = hostComputer.File(fetchUserInput[1])
+			if currentPath then
+				GetFiles(currentPath, fetchUserInput[1])
+			else
+				ErrorText("The destination path does not exist.", false)
+			end if
+        else if fetchUserInput.len > 2 then         
+		else
+			SyntaxText("flist/fl <opt: directory path>", false)
+			ErrorText("Command contains incorrect parameters.")
+		end if
+    else if fetchUserInput[0] == "clear" then // Clears Terminal Screen
+        if fetchUserInput.len > 1 then
+            SyntaxText(fetchUserInput[0], false)
+        else
+            clear_screen
+        end if
+	else
+		CommandUnknown()
+	end if
+end while
