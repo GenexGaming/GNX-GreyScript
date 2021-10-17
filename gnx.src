@@ -64,35 +64,35 @@ end function
 
 GetFiles = function(fpath, parentPath) // Call And Print Out File/Folder Structures
 	listFolders = fpath.get_folders
-    fileSeperator = " "
-    seperatorCount = null
+	fileSeperator = " "
+	seperatorCount = null
 	for folder in listFolders
-        isParentFolder = parent_path(folder.path)
+		isParentFolder = parent_path(folder.path)
 		listFiles = folder.get_files
 		if parentPath == isParentFolder then
 			parentIterate = folder.path.replace("/", " ").split(" ")
 			folderNames = PrintText(color.yellow, "|[" + folder.name + "] (" + folder.permissions + ")")
 		else
-            if folder.parent.path == lastFolder.parent.path then
-                folderNames = PrintText(color.yellow, lastSeperator + "|[" + folder.name + "] (" + folder.permissions + ")")
-            else
-                childIterate = folder.path.replace("/", " ").split(" ")
-                seperatorCount = childIterate.len - parentIterate.len
-                fileSeperator = (fileSeperator * seperatorCount) * 2
-                globals.lastSeperator = fileSeperator
-                folderNames = PrintText(color.yellow, fileSeperator + "|[" + folder.name + "] (" + folder.permissions + ")")
-            end if
+			if folder.parent.path == lastFolder.parent.path then
+				folderNames = PrintText(color.yellow, lastSeperator + "|[" + folder.name + "] (" + folder.permissions + ")")
+			else
+				childIterate = folder.path.replace("/", " ").split(" ")
+				seperatorCount = childIterate.len - parentIterate.len
+				fileSeperator = (fileSeperator * seperatorCount) * 2
+				globals.lastSeperator = fileSeperator
+				folderNames = PrintText(color.yellow, fileSeperator + "|[" + folder.name + "] (" + folder.permissions + ")")
+			end if
 		end if
-        for file in listFiles
-            if folder.parent.path == parentPath then
-                PrintText(color.white, file.name + " (" + file.permissions + ")")
-            else
-                PrintText(color.white, lastSeperator + file.name + " (" + file.permissions + ")")
-            end if
-        end for
-        fileSeperator = " "
-        globals.lastFolder = folder
-        GetFiles(hostComputer.File(folder.path))
+		for file in listFiles
+			if folder.parent.path == parentPath then
+				PrintText(color.white, file.name + " (" + file.permissions + ")")
+			else
+				PrintText(color.white, lastSeperator + file.name + " (" + file.permissions + ")")
+			end if
+		end for
+		fileSeperator = " "
+		globals.lastFolder = folder
+		GetFiles(hostComputer.File(folder.path))
 	end for
 end function
 
@@ -128,17 +128,17 @@ while isScriptRunning // Infinite Loop To Listen For User Input (Unless Loop Is 
 			else
 				ErrorText("The destination path does not exist.", false)
 			end if
-        else if fetchUserInput.len > 2 then         
+		else if fetchUserInput.len > 2 then         
 		else
 			SyntaxText("flist/fl <opt: directory path>", false)
 			ErrorText("Command contains incorrect parameters.")
 		end if
-    else if fetchUserInput[0] == "clear" then // Clears Terminal Screen
-        if fetchUserInput.len > 1 then
-            SyntaxText(fetchUserInput[0], false)
-        else
-            clear_screen
-        end if
+	else if fetchUserInput[0] == "clear" then // Clears Terminal Screen
+		if fetchUserInput.len > 1 then
+			SyntaxText(fetchUserInput[0], false)
+		else
+			clear_screen
+		end if
 	else
 		CommandUnknown()
 	end if
