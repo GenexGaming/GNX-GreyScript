@@ -3,7 +3,7 @@
 // Global Variables
 hostComputer = get_shell.host_computer
 scriptName = program_path.split("/")[-1]
-scriptVersion = "v1.0"
+scriptVersion = "v2.1"
 isScriptRunning = true
 isFirstRun = true
 parentFolder = false
@@ -141,5 +141,13 @@ while isScriptRunning // Infinite Loop To Listen For User Input (Unless Loop Is 
 		end if
 	else
 		CommandUnknown()
+    else if fetchUserInput[0] == "clear" then // Clears Terminal Screen
+        if fetchUserInput.len > 1 then
+            SyntaxText(fetchUserInput[0], false)
+        else
+            clear_screen
+        end if
+    else
+        CommandUnknown()
 	end if
 end while
