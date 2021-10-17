@@ -3,7 +3,7 @@
 // Global Variables
 hostComputer = get_shell.host_computer
 scriptName = program_path.split("/")[-1]
-scriptVersion = "v1.0"
+scriptVersion = "v2.0"
 isScriptRunning = true
 isFirstRun = true
 parentFolder = false
@@ -139,7 +139,7 @@ while isScriptRunning // Infinite Loop To Listen For User Input (Unless Loop Is 
         else
             clear_screen
         end if
-	else
-		CommandUnknown()
+    else
+        CommandUnknown()
 	end if
 end while
