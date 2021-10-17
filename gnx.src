@@ -3,7 +3,7 @@
 // Global Variables
 hostComputer = get_shell.host_computer
 scriptName = program_path.split("/")[-1]
-scriptVersion = "v2.0"
+scriptVersion = "v2.1"
 isScriptRunning = true
 isFirstRun = true
 parentFolder = false
