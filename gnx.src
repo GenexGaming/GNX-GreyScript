@@ -3,7 +3,7 @@
 // Global Variables
 hostComputer = get_shell.host_computer
 scriptName = program_path.split("/")[-1]
-scriptVersion = "v1.0"
+scriptVersion = "v2.0"
 isScriptRunning = true
 isFirstRun = true
 lastFolder = null
@@ -142,9 +142,9 @@ DeleteFile = function(fPath, fName, isFolderOrFile) // Deletes A Folder Or File
             ErrorText("The " + isFolderOrFile + " name you provided does not exist at this location.", false)
         else
             if isFolderOrFile == "folder" and not getFile.is_folder then
-                ErrorText("You are trying to delete a file. Use 'dfile' instead.")
+                ErrorText("You are trying to delete a file. Use 'dfile' instead.", false)
             else if isFolderOrFile == "file" and getFile.is_folder then
-                ErrorText("You are trying to delete a folder. Use 'dfolder' instead.")
+                ErrorText("You are trying to delete a folder. Use 'dfolder' instead.", false)
             else
                 getFile.delete
             end if
@@ -173,9 +173,9 @@ RenameFile = function(fPath, fName, nName, isFolderOrFile) // Renames A Folder O
             ErrorText("The " + isFolderOrFile + " name you provided does not exist at this location.", false)
         else
             if isFolderOrFile == "folder" and not getFile.is_folder then
-                ErrorText("You are trying to rename a file. Use 'rfile' instead.")
+                ErrorText("You are trying to rename a file. Use 'rfile' instead.", false)
             else if isFolderOrFile == "file" and getFile.is_folder then
-                ErrorText("You are trying to rename a folder. Use 'rfolder' instead.")
+                ErrorText("You are trying to rename a folder. Use 'rfolder' instead.", false)
             else
                 renamedFile = getFile.rename(nName)
             end if
@@ -203,11 +203,11 @@ GetContent = function(fPath, fName) // Gets Contents Of Specified File
             if not getFile.is_folder then
                 if getFile then
                     if not getFile.has_permission("r") then
-                        ErrorText("You do not have read permission to check the contents of file '" + fName + "'")
+                        ErrorText("You do not have read permission to check the contents of file '" + fName + "'", false)
                     else
                         checkFile = getFile.get_content
                         if checkFile == "" then
-                            ErrorText("The contents of file '" + fName + "' contains no data.")
+                            ErrorText("The contents of file '" + fName + "' contains no data.", false)
                         else
                             PrintText(color.orange, "[File Content (" + fName + ")]")
                             print(checkFile)
@@ -217,7 +217,7 @@ GetContent = function(fPath, fName) // Gets Contents Of Specified File
                     ErrorText("The file name you provided does not exist at this location.", false)
                 end if
             else
-                ErrorText("You are trying to read the content of a folder. Use 'flist' instead.")
+                ErrorText("You are trying to read the content of a folder. Use 'flist' instead.", false)
             end if
         end if
     end if
@@ -231,7 +231,7 @@ SetContent = function(fName, fContent, addOrReplace, isNewLine) // Sets Contents
     getFile = hostComputer.File(fPath + "/" + fName)
     if getFile then
         if not getFile.has_permission("w") then
-            ErrorText("You do not have write permission to set the contents of file '" + fName + "'")
+            ErrorText("You do not have write permission to set the contents of file '" + fName + "'", false)
         else
             if not getFile.is_folder then
                 if addOrReplace == "add" then
@@ -250,11 +250,55 @@ SetContent = function(fName, fContent, addOrReplace, isNewLine) // Sets Contents
                 end if
                 PrintText(color.orange, "File '" + fName + "' at location " + fPath + " has been updated.")
             else
-                ErrorText("You are trying to set the content for a folder.")
+                ErrorText("You are trying to set the content for a folder.", false)
             end if
         end if
     else
         ErrorText("The file name you provided does not exist at this location.", false)
+    end if
+end function
+
+WifiCracker = function()
+    cryptoLib = include_lib("/lib/crypto.so")
+    if not cryptoLib then
+        cryptoLib = include_lib(current_path + "crypto.so")
+    else
+        cryptoLib.airmon("start", "wlan0")
+        networkList = hostComputer.wifi_networks("wlan0") // Saves List Of BSSID's
+        networkNumber = 0
+        for network in networkList
+            networkNumber = networkNumber + 1
+            network = network.split(" ")
+            bssIdentifier = network[0]
+            networkPower = network[1]
+            essIdentifier = network[2]
+            wifiNetworks = networkNumber + ") " + bssIdentifier + " " + networkPower + " " + essIdentifier
+            PrintText(color.white, wifiNetworks)
+        end for
+        networkInput = user_input(color.white + "Selection (1 to " + networkNumber + "): ")
+        if networkInput.len > 0 and networkInput.len <= networkNumber then
+            networkInput = networkInput.to_int
+            networkNumber = networkInput - 1
+            networkInput = networkList[networkNumber]
+            networkInput = networkInput.split(" ")
+            bssIdentifier = networkInput[0]
+            networkPower = networkInput[1].remove("%").to_int
+            essIdentifier = networkInput[2]
+            acksAmount = ceil(300000/networkPower)
+            PrintText(color.orange, "Getting " + acksAmount + " acks...")
+            cryptoLib.aireplay(bssIdentifier, essIdentifier, acksAmount)
+            wifiPassword = cryptoLib.aircrack(current_path + "/file.cap")
+            checkConnection = hostComputer.connect_wifi("wlan0", bssIdentifier, essIdentifier, wifiPassword)
+            getFile = hostComputer.File(current_path + "/file.cap")
+            getFile.delete
+            if checkConnection == 1 then
+                PrintText(color.orange, "Successfully connected to " + essIdentifier + ".")
+            else if checkConnection then
+                ErrorText("Error connecting to " + essIdentifier + ". Run 'crackwifi' again and select a different network.", false)
+            else if checkConnection == null then
+                ErrorText("Network cannot be found. [" + essIdentifier + "]", false)
+            end if
+        end if
     end if
 end function
 
@@ -387,6 +431,12 @@ while isScriptRunning // Infinite Loop To Listen For User Input (Unless Loop Is 
                 textContent = splitInput.join(" ")
                 SetContent(fetchUserInput[1], textContent, fetchUserInput[2], fetchUserInput[3])
             end if
+        end if
+    else if fetchUserInput[0] == "crackwifi" then // Crack Wifi Password
+        if fetchUserInput.len > 1 then
+            SyntaxText(fetchUserInput[0])
+        else
+            WifiCracker()
         end if
     else
         CommandUnknown()
