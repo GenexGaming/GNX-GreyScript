@@ -26,21 +26,21 @@ PrintText = function(tColor, text)
     print(tColor + text + "</color>")
 end function
 
-ErrorText = function(text, ex) // text = Message String. ex = Boolean. True: Exit Program
+ErrorText = function(text, ex) // text = Message String. ex = Boolean (True: Exit Program)
     print(color.red + "<b>Error</b>" + color.white + ": " + text + "</color>")
     if ex == true then
         ExitProgram()
     end if
 end function
 
-SyntaxText = function(text, ex) // text = Message String. ex = Boolean. True: Exit Program
+SyntaxText = function(text, ex) // text = Message String. ex = Boolean (True: Exit Program)
     print(color.blue + "<b>Syntax</b>" + color.white + ": " + text + "</color>")
     if ex == true then
         ExitProgram()
     end if
 end function
 
-Capitalise = function(varName) // Capitalises First Letter Of A Single String Variable
+Capitalise = function(varName) // Capitalises First Letter Of A String Variable
     return slice(varName, 0, 1).upper + slice(varName, 1)
 end function
 
@@ -53,7 +53,7 @@ ExitProgram = function() // Self-Explanatory
     exit(color.red + "Exiting program...</color>")
 end function
 
-if params.len > 0 then // Script Starts With Only The Name Of The Script. Example: 'genx' (No Further Parameters)
+if params.len > 0 then // Script Starts With Only The Name Of The Script. Example: 'gnx' (No Further Parameters)
     SyntaxText(scriptName, true)
 end if
 
@@ -65,7 +65,7 @@ CommandUnknown = function() // Check Commands. If Non-Existent, Print Message
     ErrorText("You have entered an unknown command.", false)
 end function
 
-GetFiles = function(fPath, parentPath) // Check Through A Path To Check All Folders And Files
+GetFiles = function(fPath, parentPath) // Check Through Path To Print All Folders And Files Within
     listFolders = fPath.get_folders
     fileSeperator = " "
     seperatorCount = null
@@ -188,7 +188,7 @@ RenameFile = function(fPath, fName, nName, isFolderOrFile) // Renames A Folder O
     end if
 end function
 
-GetContent = function(fPath, fName) // Gets Contents Of Specified File
+GetContent = function(fPath, fName) // Fetches Content Of Specified File
     getParentFile = hostComputer.File(fPath)
     if hostComputer.File(fPath + "/" + fName + ".txt") then
         fName = fName + ".txt"
@@ -209,7 +209,7 @@ GetContent = function(fPath, fName) // Gets Contents Of Specified File
                         if checkFile == "" then
                             ErrorText("The contents of file '" + fName + "' contains no data.", false)
                         else
-                            PrintText(color.orange, "[File Content (" + fName + ")]")
+                            PrintText(color.blue, "[File Content (" + fName + ")]")
                             print(checkFile)
                         end if
                     end if
@@ -223,7 +223,7 @@ GetContent = function(fPath, fName) // Gets Contents Of Specified File
     end if
 end function
 
-SetContent = function(fName, fContent, addOrReplace, isNewLine) // Sets Contents Of Specified File
+SetContent = function(fName, fContent, addOrReplace, isNewLine) // Sets Content Of Specified File (Only In Current Path)
     fPath = current_path
     if hostComputer.File(fPath + "/" + fName + ".txt") then
         fName = fName + ".txt"
@@ -258,13 +258,13 @@ SetContent = function(fName, fContent, addOrReplace, isNewLine) // Sets Contents
     end if
 end function
 
-WifiCracker = function()
+WifiCracker = function() // Scan, Print, Crack, And Connect To Wifi Networks
     cryptoLib = include_lib("/lib/crypto.so")
     if not cryptoLib then
         cryptoLib = include_lib(current_path + "crypto.so")
     else
         cryptoLib.airmon("start", "wlan0")
-        networkList = hostComputer.wifi_networks("wlan0") // Saves List Of BSSID's
+        networkList = hostComputer.wifi_networks("wlan0")
         networkNumber = 0
         for network in networkList
             networkNumber = networkNumber + 1
@@ -297,6 +297,50 @@ WifiCracker = function()
                 ErrorText("Error connecting to " + essIdentifier + ". Run 'crackwifi' again and select a different network.", false)
             else if checkConnection == null then
                 ErrorText("Network cannot be found. [" + essIdentifier + "]", false)
+            end if
+        end if
+    end if
+end function
+
+IpScanner = function(targetAddress) // IP Scanning
+isLanIp = is_lan_ip(targetAddress)
+    if isLanIp then
+        targetRouter = get_router
+    else
+        targetRouter = get_router(targetAddress)
+    end if
+    if targetRouter == null then
+        ErrorText("IP address is not found. Check again or try a different one.", false)
+    else
+        targetPorts = null
+        if not isLanIp then
+            targetPorts = targetRouter.used_ports
+        else
+            targetPorts = targetRouter.device_ports
+        end if
+        if targetPorts == null then
+            ErrorText("IP address is not found. Check again or try a different one", false)
+        else
+            if typeof(targetPorts) == "string" then
+                ErrorText("String: " + targetPorts)
+            else
+                info = "PORT STATE SERVICE VERSION LAN"
+                PrintText(color.orange, "- Starting IP Scanner Tool (" + current_date + ") -")
+                PrintText(color.orange, "Checking ports on target " + targetAddress + "...")
+                if targetPorts.len == 0 then
+                    PrintText(color.white, "No open ports have been found.")
+                else
+                    for port in targetPorts
+                        serviceInfo = targetRouter.port_info(port)
+                        lanAddresses = port.get_lan_ip
+                        portStatus = "open"
+                        if port.is_closed and not isLaniP then
+                            portStatus = "closed"
+                        end if
+                        info = info + "\n" + port.port_number + " " + portStatus + " " + serviceInfo + " " + lanAddresses
+                    end for
+                    PrintText(color.white, format_columns(info) + "\n")
+                end if
             end if
         end if
     end if
@@ -418,18 +462,23 @@ while isScriptRunning // Infinite Loop To Listen For User Input (Unless Loop Is 
         if fetchUserInput.len < 4 then
             SyntaxText(fetchUserInput[0] + " <file name> <add/replace> <opt: new line = false> <content>", false)
         else
-            if fetchUserInput.len == 4 then
-                splitInput = fetchUserInput[3:]
-                textContent = splitInput.join(" ")
-                SetContent(fetchUserInput[1], textContent, fetchUserInput[2], false)
+            if fetchUserInput[2] != "add" and fetchUserInput[2] != "replace" then
+                SyntaxText(fetchUserInput[0] + " <file name> <add/replace> <opt: new line = false> <content>", false)
+                ErrorText("You must select either 'add' or 'replace'.", false)
             else
-                if fetchUserInput[3] == "true" or fetchUserInput[3] == "false" then
-                    splitInput = fetchUserInput[4:]
-                else
+                if fetchUserInput.len == 4 then
                     splitInput = fetchUserInput[3:]
+                    textContent = splitInput.join(" ")
+                    SetContent(fetchUserInput[1], textContent, fetchUserInput[2], false)
+                else
+                    if fetchUserInput[3] == "true" or fetchUserInput[3] == "false" then
+                        splitInput = fetchUserInput[4:]
+                    else
+                        splitInput = fetchUserInput[3:]
+                    end if
+                    textContent = splitInput.join(" ")
+                    SetContent(fetchUserInput[1], textContent, fetchUserInput[2], fetchUserInput[3])
                 end if
-                textContent = splitInput.join(" ")
-                SetContent(fetchUserInput[1], textContent, fetchUserInput[2], fetchUserInput[3])
             end if
         end if
     else if fetchUserInput[0] == "crackwifi" then // Crack Wifi Password
@@ -437,6 +486,20 @@ while isScriptRunning // Infinite Loop To Listen For User Input (Unless Loop Is 
             SyntaxText(fetchUserInput[0])
         else
             WifiCracker()
+        end if
+    else if fetchUserInput[0] == "scanip" then // Scan IP Address For Ports And Additional Information
+        if fetchUserInput.len != 2 then
+            SyntaxText(fetchUserInput[0] + " <ip address>")
+        else
+            if not is_valid_ip(fetchUserInput[1]) then
+                ErrorText("You have entered an invalid IP address.", false)
+            else
+                if hostComputer.is_network_active == 0 then
+                    ErrorText("No internet connection. Use 'crackwifi' to gain access.", false)
+                else
+                    IpScanner(fetchUserInput[1])
+                end if
+            end if
         end if
     else
         CommandUnknown()
