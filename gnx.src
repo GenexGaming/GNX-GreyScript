@@ -11,7 +11,7 @@ lastSeperator = null
 fetchUserInput = null
 
 // Command Initialization
-mainCommands = ["help", "exit", "clear", "flist", "cfolder", "cfile", "dfolder", "dfile"]
+mainCommands = ["help", "exit", "clear", "flist", "cfolder", "cfile", "dfolder", "dfile", "crackwifi"]
 
 // Colour Initialization - Hex Codes
 color = {}
